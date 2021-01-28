@@ -10,7 +10,7 @@ const { AsyncSelect } = LegacyForms;
 type Props = QueryEditorProps<SdsDataSource, SdsQuery, SdsDataSourceOptions>;
 
 export class QueryEditor extends PureComponent<Props> {
-  streams: SelectableValue<string>[] = [];
+  streams: Array<SelectableValue<string>> = [];
 
   constructor(props: Props) {
     super(props);
