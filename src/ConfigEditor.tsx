@@ -69,7 +69,7 @@ export class ConfigEditor extends PureComponent<Props> {
     if (jsonData.oauthPassThru == null) {
       jsonData.oauthPassThru = false;
     }
-    if (jsonData.type == SdsDataSourceType.EDS && !jsonData.namespace) {
+    if (jsonData.type === SdsDataSourceType.EDS && !jsonData.namespace) {
       jsonData.namespace = 'default';
     }
 
