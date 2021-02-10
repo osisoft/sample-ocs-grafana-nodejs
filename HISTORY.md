@@ -1,5 +1,9 @@
 # Version History
 
+## 1.1.5 / 2021-02-10
+
+- Updated dependencies
+
 ## 1.1.4 / 2021-01-28
 
 - Fix linting issues
