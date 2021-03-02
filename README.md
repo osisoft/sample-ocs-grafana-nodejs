@@ -1,8 +1,8 @@
 # Grafana Sequential Data Store Sample
 
-**Version:** 1.1.4
+**Version:** 1.1.5
 
-[![Build Status](https://dev.azure.com/osieng/engineering/_apis/build/status/product-readiness/OCS/osisoft.sample-ocs-grafana-nodejs?repoName=osisoft%2Fsample-ocs-grafana-nodejs&branchName=master)](https://dev.azure.com/osieng/engineering/_build/latest?definitionId=2619&repoName=osisoft%2Fsample-ocs-grafana-nodejs&branchName=master)
+[![Build Status](https://dev.azure.com/osieng/engineering/_apis/build/status/product-readiness/OCS/osisoft.sample-ocs-grafana-nodejs?repoName=osisoft%2Fsample-ocs-grafana-nodejs&branchName=main)](https://dev.azure.com/osieng/engineering/_build/latest?definitionId=2619&repoName=osisoft%2Fsample-ocs-grafana-nodejs&branchName=main)
 
 This sample demonstrates how to build a [Grafana](https://grafana.com/) plugin that runs queries against the Sequential Data Store of OSIsoft Cloud Services or Edge Data Store. The sample performs normal "Get Values" calls against a specified stream in SDS, using the time range of the Grafana dashboard. See the [Grafana Documentation](https://grafana.com/docs/grafana/latest/developers/plugins/) for more information on developing Grafana plugins.
 
@@ -46,4 +46,4 @@ If you are interested in using using OCS OAuth in your Grafana server, please ch
 ---
 
 For the main OCS page [ReadMe](https://github.com/osisoft/OSI-Samples-OCS)
-For the main samples page on master [ReadMe](https://github.com/osisoft/OSI-Samples)
+For the main samples page [ReadMe](https://github.com/osisoft/OSI-Samples)
