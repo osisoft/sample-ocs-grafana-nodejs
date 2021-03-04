@@ -1,5 +1,10 @@
 # Version History
 
+## 1.1.5 / 2021-03-02
+
+- Updated pipeline to use internal agent pool
+- Updated pipeline to reference main branch
+
 ## 1.1.4 / 2021-01-28
 
 - Fix linting issues
