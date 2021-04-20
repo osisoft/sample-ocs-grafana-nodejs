@@ -6,9 +6,11 @@ import {
   MutableDataFrame,
   FieldType,
   SelectableValue,
+  MetricFindValue,
 } from '@grafana/data';
+import { getTemplateSrv } from '@grafana/runtime';
 
-import { SdsQuery, SdsDataSourceOptions, SdsDataSourceType } from 'types';
+import { SdsQuery, SdsDataSourceOptions, SdsDataSourceType, SdsStream } from 'types';
 
 export declare type BackendSrvRequest = {
   url: string;
@@ -34,7 +36,7 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
   get streamsUrl() {
     return this.type === SdsDataSourceType.OCS
       ? `${this.proxyUrl}/ocs/api/${this.ocs_version}/tenants/${this.ocs_tenant}/namespaces/${this.namespace}/streams`
-      : `http://localhost:${this.eds_port}/api/v1/tenants/default/namespaces/${this.namespace}/streams`;
+      : `${this.proxyUrl}/eds/api/v1/tenants/default/namespaces/${this.namespace}/streams`;
   }
 
   /** @ngInject */
@@ -57,13 +59,31 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
     const from = options.range?.from.utc().format();
     const to = options.range?.to.utc().format();
     const requests = options.targets.map(target => {
-      if (!target.stream) {
+      if (!target.stream || !target.stream.Id) {
         return new Promise(resolve => resolve(null));
       }
-      return this.backendSrv.datasourceRequest({
-        url: `${this.streamsUrl}/${target.stream}/data?startIndex=${from}&endIndex=${to}`,
-        method: 'GET',
-      });
+      if (!target.method) target.method = 'values';
+      const template =  getTemplateSrv();
+      if (template) {
+        target.stream.Id = template.replace(target.stream.Id, options.scopedVars);
+      }
+      let url = `${this.streamsUrl}/${target.stream.Id}/data`;
+      if (!/values|distinct/.test(target.method)) {
+        url += `/${target.method}`;
+      }
+      if (/values|interpolated|summaries/.test(target.method)) {
+        url += `?startIndex=${from}&endIndex=${to}`;
+        if (target.method != 'values') {
+          url += `&count=${options.maxDataPoints}`;
+        }
+        if (target.method != 'interpolated' && target.filter) {
+          url += `&filter=${target.filter}`;
+        }
+      }
+      else if (target.method == 'distinct') {
+        url += `?index=${target.position=='start'?from:to}&searchMode=${target.searchMode}`;
+      }
+      return this.backendSrv.datasourceRequest({ url, method: 'GET' });
     });
 
     const data = await Promise.all(requests).then(responses => {
@@ -74,10 +94,22 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
         }
 
         const target = options.targets[i];
+        if (!Array.isArray(r.data)) r.data = [ r.data ];
+        if (r.data[0].Summaries) {
+          r.data = r.data.map(d => {
+            const data = d.Start;
+            Object.keys(d.Summaries).forEach(sum => {
+              Object.keys(d.Summaries[sum]).forEach(prop => {
+                data[`${prop}_${sum}`] = d.Summaries[sum][prop];
+              });
+            });
+            return data;
+          });
+        }
         i++;
         return new MutableDataFrame({
           refId: target.refId,
-          name: target.stream,
+          name: target.stream.Name,
           fields: Object.keys(r.data[0]).map(name => {
             const val0 = r.data[0][name];
             const date = Date.parse(val0);
@@ -103,12 +135,31 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
     return { data };
   }
 
-  async getStreams(query: string): Promise<SelectableValue<string>[]> {
+  async getStreams(query: string): Promise<SelectableValue<SdsStream>[]> {
+    if (this.namespace) {
+      const url = query ? `${this.streamsUrl}?query=*${query}*` : this.streamsUrl;
+      const requests = this.backendSrv.datasourceRequest({ url, method: 'GET' });
+      const template = getTemplateSrv();
+      const templateVariables = template 
+        ? template.getVariables()
+          .filter(v => v.label?.includes(query))
+          .map(v => ({ value: `$${v.name}`, label: v.label ? `$${v.label}` : `$${v.name}` }))
+        : [];
+      return await Promise.resolve(requests).then(responses =>
+        Object.keys(responses.data).map(r => ({ value: responses.data[r], label: responses.data[r].Name }))
+        .concat(templateVariables)
+      );
+    } else {
+      return await new Promise(resolve => resolve([]));
+    }
+  }
+
+  async metricFindQuery(query: string, options?: any): Promise<MetricFindValue[]> {
     if (this.namespace) {
       const url = query ? `${this.streamsUrl}?query=*${query}*` : this.streamsUrl;
       const requests = this.backendSrv.datasourceRequest({ url, method: 'GET' });
       return await Promise.resolve(requests).then(responses =>
-        Object.keys(responses.data).map(r => ({ value: responses.data[r].Id, label: responses.data[r].Id }))
+        Object.keys(responses.data).map(r => ({ text: responses.data[r].Id }))
       );
     } else {
       return await new Promise(resolve => resolve([]));

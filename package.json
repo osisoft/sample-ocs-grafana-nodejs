@@ -18,6 +18,7 @@
   "dependencies": {},
   "devDependencies": {
     "@grafana/data": "^7.3.1",
+    "@grafana/runtime": "^7.3.7",
     "@grafana/toolkit": "^7.3.1",
     "@types/grafana": "github:CorpGlory/types-grafana",
     "typescript": "^4.0.5"

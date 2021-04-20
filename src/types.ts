@@ -6,7 +6,18 @@ export enum SdsDataSourceType {
 }
 
 export interface SdsQuery extends DataQuery {
-  stream: string;
+  stream: SdsStream;
+  method: string;
+  position?: string;
+  searchMode?: string;
+  filter?: string;
+}
+
+export interface SdsStream {
+  TypeId?: string;
+	Id: string;
+	Name?: string;
+	Description?: string;
 }
 
 export interface SdsDataSourceOptions extends DataSourceJsonData {

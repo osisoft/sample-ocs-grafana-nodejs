@@ -54,9 +54,7 @@ describe('SdsDataSource', () => {
 
     it('should return the correct URL for EDS', () => {
       const datasource = new SdsDataSource(edsSettings, backendSrv as any);
-      expect(datasource.streamsUrl).toEqual(
-        'http://localhost:PORT/api/v1/tenants/default/namespaces/NAMESPACE/streams'
-      );
+      expect(datasource.streamsUrl).toEqual('/eds/api/v1/tenants/default/namespaces/NAMESPACE/streams');
     });
   });
 
@@ -92,7 +90,7 @@ describe('SdsDataSource', () => {
           {
             refId: 'REFID',
             namespace: 'NAMESPACE',
-            stream: 'STREAM',
+            stream: { Id: 'STREAM', Name: 'STREAMNAME' },
           },
         ],
       };
@@ -107,7 +105,7 @@ describe('SdsDataSource', () => {
             data: [
               new MutableDataFrame({
                 refId: 'REFID',
-                name: 'STREAM',
+                name: 'STREAMNAME',
                 fields: [
                   {
                     name: 'TimeStamp',
@@ -152,11 +150,12 @@ describe('SdsDataSource', () => {
 
     it('should query for streams', done => {
       const Id = 'Stream';
-      spyOn(backendSrv, 'datasourceRequest').and.returnValue(Promise.resolve({ data: [{ Id }] }));
+      const Name = 'StreamName';
+      spyOn(backendSrv, 'datasourceRequest').and.returnValue(Promise.resolve({ data: [{ Id, Name }] }));
       const datasource = new SdsDataSource(ocsSettings, backendSrv as any);
       const result = datasource.getStreams('test');
       result.then(r => {
-        expect(r).toEqual([{ value: Id, label: Id }]);
+        expect(r).toEqual([{ value: { Id, Name }, label: Name }]);
         done();
       });
     });

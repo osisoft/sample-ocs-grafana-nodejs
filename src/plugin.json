@@ -36,6 +36,10 @@
           "client_secret": "{{.SecureJsonData.ocs_secret}}"
         }
       }
+    },
+    {
+      "path": "eds",
+      "url": "http://localhost:{{.JsonData.eds_port}}"
     }
   ],
   "dependencies": {
