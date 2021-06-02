@@ -53,10 +53,10 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
     this.ocsUrl = instanceSettings.jsonData?.ocsUrl || '';
     this.ocsVersion = instanceSettings.jsonData?.ocsVersion || 'v1';
     this.ocsTenant = instanceSettings.jsonData?.ocsTenant || '';
+    this.ocsUseCommunity = instanceSettings.jsonData?.ocsUseCommunity || false;
+    this.ocsCommunity = instanceSettings.jsonData?.ocsCommunity || '';
     this.oauthPassThru = instanceSettings.jsonData?.oauthPassThru || false;
-    this.namespace = instanceSettings.jsonData.namespace || '';
-    this.ocsUseCommunity = instanceSettings.jsonData.ocsUseCommunity || false;
-    this.ocsCommunity = instanceSettings.jsonData.ocsCommunity || '';
+    this.namespace = instanceSettings.jsonData?.namespace || '';
   }
 
   async query(options: DataQueryRequest<SdsQuery>): Promise<DataQueryResponse> {

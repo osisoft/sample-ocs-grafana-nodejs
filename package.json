@@ -12,7 +12,8 @@
   "scripts": {
     "build": "grafana-toolkit plugin:build",
     "dev": "grafana-toolkit plugin:dev",
-    "test": "grafana-toolkit plugin:test"
+    "test": "grafana-toolkit plugin:test",
+    "cov": "grafana-toolkit plugin:test --coverage"
   },
   "dependencies": {},
   "devDependencies": {

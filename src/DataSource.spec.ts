@@ -4,6 +4,7 @@ import { SdsDataSource } from 'DataSource';
 import { SdsDataSourceOptions, SdsDataSourceType } from 'types';
 
 describe('SdsDataSource', () => {
+  const url = 'URL';
   const edsPort = 'PORT';
   const ocsUrl = 'URL';
   const ocsVersion = 'VERSION';
@@ -18,6 +19,7 @@ describe('SdsDataSource', () => {
     uid: '',
     name: '',
     type: '',
+    url,
     meta: null as any,
     jsonData: {
       type: SdsDataSourceType.OCS,
@@ -32,6 +34,7 @@ describe('SdsDataSource', () => {
       ocsCommunity: ocsCommunity,
     },
   };
+  const ocsCommSettings = { ...ocsSettings, ...{ jsonData: { ...ocsSettings.jsonData, ocsUseCommunity: true } } };
   const edsSettings = { ...ocsSettings, ...{ jsonData: { ...ocsSettings.jsonData, type: SdsDataSourceType.EDS } } };
   const backendSrv = {
     datasourceRequest: () => new Promise((r) => r),
@@ -40,20 +43,43 @@ describe('SdsDataSource', () => {
   describe('constructor', () => {
     it('should use passed in data source information', () => {
       const datasource = new SdsDataSource(ocsSettings, backendSrv as any);
+      expect(datasource.proxyUrl).toEqual(url);
       expect(datasource.type).toEqual(SdsDataSourceType.OCS);
       expect(datasource.edsPort).toEqual(edsPort);
       expect(datasource.ocsUrl).toEqual(ocsUrl);
       expect(datasource.ocsVersion).toEqual(ocsVersion);
       expect(datasource.ocsTenant).toEqual(ocsTenant);
+      expect(datasource.ocsUseCommunity).toEqual(ocsUseCommunity);
+      expect(datasource.ocsCommunity).toEqual(ocsCommunity);
       expect(datasource.oauthPassThru).toEqual(oauthPassThru);
       expect(datasource.namespace).toEqual(namespace);
+    });
+
+    it('should handle empty jsonData', () => {
+      const nullSettings: any = { ...ocsSettings, ...{ url: null, jsonData: null } };
+      const datasource = new SdsDataSource(nullSettings, backendSrv as any);
+      expect(datasource.proxyUrl).toEqual('');
+      expect(datasource.type).toEqual(SdsDataSourceType.OCS);
+      expect(datasource.edsPort).toEqual('5590');
+      expect(datasource.ocsUrl).toEqual('');
+      expect(datasource.ocsVersion).toEqual('v1');
+      expect(datasource.ocsTenant).toEqual('');
+      expect(datasource.ocsUseCommunity).toEqual(false);
+      expect(datasource.ocsCommunity).toEqual('');
+      expect(datasource.oauthPassThru).toEqual(false);
+      expect(datasource.namespace).toEqual('');
     });
   });
 
   describe('getStreamsUrl', () => {
     it('should return the correct URL for OCS', () => {
       const datasource = new SdsDataSource(ocsSettings, backendSrv as any);
-      expect(datasource.streamsUrl).toEqual('/ocs/api/VERSION/tenants/TENANT/namespaces/NAMESPACE/streams');
+      expect(datasource.streamsUrl).toEqual('URL/ocs/api/VERSION/tenants/TENANT/namespaces/NAMESPACE/streams');
+    });
+
+    it('should return the correct URL for OCS communities', () => {
+      const datasource = new SdsDataSource(ocsCommSettings, backendSrv as any);
+      expect(datasource.streamsUrl).toEqual('URL/ocs/api/VERSION/tenants/TENANT/search/communities/COMMUNITY/streams');
     });
 
     it('should return the correct URL for EDS', () => {
@@ -103,7 +129,7 @@ describe('SdsDataSource', () => {
       };
       const response = datasource.query(options as any);
       expect(backendSrv.datasourceRequest).toHaveBeenCalledWith({
-        url: '/ocs/api/VERSION/tenants/TENANT/namespaces/NAMESPACE/streams/STREAM/data?startIndex=FROM&endIndex=TO',
+        url: 'URL/ocs/api/VERSION/tenants/TENANT/namespaces/NAMESPACE/streams/STREAM/data?startIndex=FROM&endIndex=TO',
         method: 'GET',
       });
       response.then((r) => {
@@ -142,6 +168,106 @@ describe('SdsDataSource', () => {
         done();
       });
     });
+
+    it('should query a community with the expected parameters', (done) => {
+      spyOn(backendSrv, 'datasourceRequest').and.returnValue(
+        Promise.resolve({
+          data: [
+            {
+              TimeStamp: '2020-01-01',
+              Boolean: true,
+              Number: 1,
+              String: 'A',
+            },
+          ],
+        })
+      );
+      const datasource = new SdsDataSource(ocsCommSettings, backendSrv as any);
+      const options = {
+        range: {
+          from: {
+            utc: () => ({
+              format: () => 'FROM',
+            }),
+          },
+          to: {
+            utc: () => ({
+              format: () => 'TO',
+            }),
+          },
+        },
+        targets: [
+          {
+            refId: 'REFID',
+            namespace: 'NAMESPACE',
+            streamId: 'https://dat-b.osisoft.com/streampath',
+            streamName: 'STREAM',
+          },
+        ],
+      };
+      const response = datasource.query(options as any);
+      expect(backendSrv.datasourceRequest).toHaveBeenCalledWith({
+        url: 'URL/ocs/streampath/data?startIndex=FROM&endIndex=TO',
+        method: 'GET',
+      });
+      response.then((r) => {
+        expect(JSON.stringify(r)).toEqual(
+          JSON.stringify({
+            data: [
+              new MutableDataFrame({
+                refId: 'REFID',
+                name: 'STREAM',
+                fields: [
+                  {
+                    name: 'TimeStamp',
+                    type: FieldType.time,
+                    values: [Date.parse('2020-01-01')],
+                  },
+                  {
+                    name: 'Boolean',
+                    type: FieldType.boolean,
+                    values: [true],
+                  },
+                  {
+                    name: 'Number',
+                    type: FieldType.number,
+                    values: [1],
+                  },
+                  {
+                    name: 'String',
+                    type: FieldType.string,
+                    values: ['A'],
+                  },
+                ],
+              }),
+            ],
+          })
+        );
+        done();
+      });
+    });
+
+    it('should handle invalid query', (done) => {
+      spyOn(backendSrv, 'datasourceRequest');
+      const datasource = new SdsDataSource(ocsSettings, backendSrv as any);
+      const options = {
+        range: null,
+        targets: [
+          {
+            refId: 'REFID',
+            namespace: 'NAMESPACE',
+            streamId: null,
+            streamName: 'STREAM',
+          },
+        ],
+      };
+      const response = datasource.query(options as any);
+      expect(backendSrv.datasourceRequest).not.toHaveBeenCalled();
+      response.then((r) => {
+        expect(JSON.stringify(r)).toEqual(JSON.stringify({ data: [new MutableDataFrame()] }));
+        done();
+      });
+    });
   });
 
   describe('getStreams', () => {
@@ -165,6 +291,18 @@ describe('SdsDataSource', () => {
         done();
       });
     });
+
+    it('should query a community for streams', (done) => {
+      const Id = 'Stream';
+      const Self = 'Self';
+      spyOn(backendSrv, 'datasourceRequest').and.returnValue(Promise.resolve({ data: [{ Self, Id }] }));
+      const datasource = new SdsDataSource(ocsCommSettings, backendSrv as any);
+      const result = datasource.getStreams('test');
+      result.then((r) => {
+        expect(r).toEqual([{ value: Self, label: Id }]);
+        done();
+      });
+    });
   });
 
   describe('testDatasource', () => {
@@ -177,7 +315,7 @@ describe('SdsDataSource', () => {
       const datasource = new SdsDataSource(ocsSettings, backendSrv as any);
       const response = datasource.testDatasource();
       expect(backendSrv.datasourceRequest).toHaveBeenCalledWith({
-        url: '/ocs/api/VERSION/tenants/TENANT/namespaces/NAMESPACE/streams',
+        url: 'URL/ocs/api/VERSION/tenants/TENANT/namespaces/NAMESPACE/streams',
         method: 'GET',
       });
       response.then((r) => {
@@ -199,7 +337,7 @@ describe('SdsDataSource', () => {
       const datasource = new SdsDataSource(ocsSettings, backendSrv as any);
       const response = datasource.testDatasource();
       expect(backendSrv.datasourceRequest).toHaveBeenCalledWith({
-        url: '/ocs/api/VERSION/tenants/TENANT/namespaces/NAMESPACE/streams',
+        url: 'URL/ocs/api/VERSION/tenants/TENANT/namespaces/NAMESPACE/streams',
         method: 'GET',
       });
       response.then((r) => {
