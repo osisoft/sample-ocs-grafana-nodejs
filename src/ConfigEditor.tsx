@@ -40,11 +40,11 @@ export class ConfigEditor extends PureComponent<Props> {
     const { onOptionsChange, options } = this.props;
     const secureJsonData = {
       ...options.secureJsonData,
-      ocs_secret: '',
+      ocsSecret: '',
     };
     const secureJsonFields = {
       ...options.secureJsonFields,
-      ocs_secret: false,
+      ocsSecret: false,
     };
     onOptionsChange({ ...options, secureJsonData, secureJsonFields });
   };
@@ -57,14 +57,14 @@ export class ConfigEditor extends PureComponent<Props> {
     if (!jsonData.type) {
       jsonData.type = SdsDataSourceType.OCS;
     }
-    if (!jsonData.eds_port) {
-      jsonData.eds_port = '5590';
+    if (!jsonData.edsPort) {
+      jsonData.edsPort = '5590';
     }
-    if (!jsonData.ocs_url) {
-      jsonData.ocs_url = 'https://dat-b.osisoft.com';
+    if (!jsonData.ocsUrl) {
+      jsonData.ocsUrl = 'https://dat-b.osisoft.com';
     }
-    if (!jsonData.ocs_version) {
-      jsonData.ocs_version = 'v1';
+    if (!jsonData.ocsVersion) {
+      jsonData.ocsVersion = 'v1';
     }
     if (jsonData.oauthPassThru == null) {
       jsonData.oauthPassThru = false;
@@ -104,8 +104,8 @@ export class ConfigEditor extends PureComponent<Props> {
                 placeholder="5590"
                 labelWidth={10}
                 inputWidth={20}
-                onChange={onUpdateDatasourceJsonDataOption(this.props, 'eds_port')}
-                value={jsonData.eds_port || ''}
+                onChange={onUpdateDatasourceJsonDataOption(this.props, 'edsPort')}
+                value={jsonData.edsPort || ''}
               />
             </div>
             <div className="gf-form">
@@ -132,8 +132,8 @@ export class ConfigEditor extends PureComponent<Props> {
                 placeholder="https://dat-b.osisoft.com"
                 labelWidth={10}
                 inputWidth={20}
-                onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocs_url')}
-                value={jsonData.ocs_url || ''}
+                onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocsUrl')}
+                value={jsonData.ocsUrl || ''}
               />
             </div>
             <div className="gf-form">
@@ -144,8 +144,8 @@ export class ConfigEditor extends PureComponent<Props> {
                 placeholder="v1"
                 labelWidth={10}
                 inputWidth={20}
-                onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocs_version')}
-                value={jsonData.ocs_version || ''}
+                onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocsVersion')}
+                value={jsonData.ocsVersion || ''}
               />
             </div>
             <div className="gf-form">
@@ -156,22 +156,46 @@ export class ConfigEditor extends PureComponent<Props> {
                 placeholder="00000000-0000-0000-0000-000000000000"
                 labelWidth={10}
                 inputWidth={20}
-                onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocs_tenant')}
-                value={jsonData.ocs_tenant || ''}
+                onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocsTenant')}
+                value={jsonData.ocsTenant || ''}
               />
             </div>
-            <div className="gf-form">
-              <FormField
-                required={true}
-                label="Namespace"
-                tooltip="The Namespace in your for OSIsoft Cloud Services tenant"
-                placeholder="Enter a Namespace ID..."
-                labelWidth={10}
-                inputWidth={20}
-                onChange={onUpdateDatasourceJsonDataOption(this.props, 'namespace')}
-                value={jsonData.namespace || ''}
+            <div className="gf-form-inline">
+              <Switch
+                label="Community Data"
+                labelClass="width-10"
+                tooltip="OSIsoft Cloud Services Community"
+                onChange={onUpdateDatasourceJsonDataOptionChecked(this.props, 'ocsUseCommunity')}
+                checked={jsonData.ocsUseCommunity}
               />
             </div>
+            {jsonData.ocsUseCommunity && (
+              <div className="gf-form">
+                <FormField
+                  label="Community ID"
+                  tooltip="The ID of the OSIsoft Cloud Services Community"
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  labelWidth={10}
+                  inputWidth={20}
+                  onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocsCommunity')}
+                  value={jsonData.ocsCommunity || ''}
+                />
+              </div>
+            )}
+            {!jsonData.ocsUseCommunity && (
+              <div className="gf-form">
+                <FormField
+                  required={true}
+                  label="Namespace"
+                  tooltip="The Namespace in your for OSIsoft Cloud Services tenant"
+                  placeholder="Enter a Namespace ID..."
+                  labelWidth={10}
+                  inputWidth={20}
+                  onChange={onUpdateDatasourceJsonDataOption(this.props, 'namespace')}
+                  value={jsonData.namespace || ''}
+                />
+              </div>
+            )}
             <div className="gf-form-inline">
               <Switch
                 label="Use OAuth token"
@@ -195,8 +219,8 @@ export class ConfigEditor extends PureComponent<Props> {
                   placeholder="00000000-0000-0000-0000-000000000000"
                   labelWidth={10}
                   inputWidth={20}
-                  onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocs_client')}
-                  value={jsonData.ocs_client || ''}
+                  onChange={onUpdateDatasourceJsonDataOption(this.props, 'ocsClient')}
+                  value={jsonData.ocsClient || ''}
                 />
               </div>
             )}
@@ -210,10 +234,10 @@ export class ConfigEditor extends PureComponent<Props> {
                   placeholder="Enter a Client secret..."
                   labelWidth={10}
                   inputWidth={20}
-                  onChange={onUpdateDatasourceSecureJsonDataOption(this.props, 'ocs_secret')}
+                  onChange={onUpdateDatasourceSecureJsonDataOption(this.props, 'ocsSecret')}
                   onReset={this.onResetClientSecret}
-                  isConfigured={secureJsonFields?.ocs_secret || false}
-                  value={secureJsonData?.ocs_secret || ''}
+                  isConfigured={secureJsonFields?.ocsSecret || false}
+                  value={secureJsonData?.ocsSecret || ''}
                 />
               </div>
             )}

@@ -6,20 +6,23 @@ export enum SdsDataSourceType {
 }
 
 export interface SdsQuery extends DataQuery {
-  stream: string;
+  streamId: string;
+  streamName: string;
 }
 
 export interface SdsDataSourceOptions extends DataSourceJsonData {
   type: SdsDataSourceType;
-  eds_port: string;
-  ocs_url: string;
-  ocs_version: string;
-  ocs_tenant: string;
-  ocs_client: string;
+  edsPort: string;
+  ocsUrl: string;
+  ocsVersion: string;
+  ocsTenant: string;
+  ocsClient: string;
+  ocsUseCommunity: boolean;
+  ocsCommunity: string;
   oauthPassThru: boolean;
   namespace: string;
 }
 
 export interface SdsDataSourceSecureOptions {
-  ocs_secret: string;
+  ocsSecret: string;
 }

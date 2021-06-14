@@ -17,21 +17,17 @@ export class QueryEditor extends PureComponent<Props> {
   }
 
   async queryStreamsAsync(value: string) {
-    const { query } = this.props;
-    query.stream = value;
-
     return await this.props.datasource.getStreams(value);
   }
 
   onSelectedStream = (value: SelectableValue<string>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, stream: value.value || '' });
+    onChange({ ...query, streamId: value.value || '', streamName: value.label || '' });
   };
 
   render() {
     const query = this.props.query;
-    const { stream } = query;
-    const select_stream: SelectableValue<string> = { label: stream, value: stream };
+    const selectStream: SelectableValue<string> = { label: query.streamName, value: query.streamId };
 
     return (
       <div className="gf-form">
@@ -39,15 +35,15 @@ export class QueryEditor extends PureComponent<Props> {
         <AsyncSelect
           defaultOptions={true}
           width={20}
-          loadOptions={inputvalue => this.queryStreamsAsync(inputvalue)}
-          defaultValue={stream}
-          value={select_stream}
-          onChange={inputvalue => this.onSelectedStream(inputvalue)}
+          loadOptions={(inputvalue) => this.queryStreamsAsync(inputvalue)}
+          defaultValue={query.streamId}
+          value={selectStream}
+          onChange={(inputvalue) => this.onSelectedStream(inputvalue)}
           placeholder="Select Stream"
           loadingMessage={() => 'Loading streams...'}
           noOptionsMessage={() => 'No streams found'}
         />
-        <LegacyForms.Input value={stream || ''} readOnly={true} hidden />
+        <LegacyForms.Input value={query.streamId || ''} readOnly={true} hidden />
       </div>
     );
   }

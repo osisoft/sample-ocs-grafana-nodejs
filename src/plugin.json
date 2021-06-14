@@ -16,7 +16,7 @@
     "links": [
       {
         "name": "GitHub",
-        "url": "https://github.com/osisoft/OSI-Samples-OCS/advanced_samples/Grafana"
+        "url": "https://github.com/osisoft/sample-ocs-grafana-nodejs"
       },
       {
         "name": "Apache-2 License",
@@ -27,13 +27,13 @@
   "routes": [
     {
       "path": "ocs",
-      "url": "{{.JsonData.ocs_url}}",
+      "url": "{{.JsonData.ocsUrl}}",
       "tokenAuth": {
-        "url": "{{.JsonData.ocs_url}}/identity/connect/token",
+        "url": "{{.JsonData.ocsUrl}}/identity/connect/token",
         "params": {
           "grant_type": "client_credentials",
-          "client_id": "{{.JsonData.ocs_client}}",
-          "client_secret": "{{.SecureJsonData.ocs_secret}}"
+          "client_id": "{{.JsonData.ocsClient}}",
+          "client_secret": "{{.SecureJsonData.ocsSecret}}"
         }
       }
     }

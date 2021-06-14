@@ -24,17 +24,21 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
   proxyUrl: string;
 
   type: SdsDataSourceType;
-  eds_port: string;
-  ocs_url: string;
-  ocs_version: string;
-  ocs_tenant: string;
+  edsPort: string;
+  ocsUrl: string;
+  ocsVersion: string;
+  ocsTenant: string;
+  ocsUseCommunity: boolean;
+  ocsCommunity: string;
   oauthPassThru: boolean;
   namespace: string;
 
   get streamsUrl() {
     return this.type === SdsDataSourceType.OCS
-      ? `${this.proxyUrl}/ocs/api/${this.ocs_version}/tenants/${this.ocs_tenant}/namespaces/${this.namespace}/streams`
-      : `http://localhost:${this.eds_port}/api/v1/tenants/default/namespaces/${this.namespace}/streams`;
+      ? this.ocsUseCommunity === true
+        ? `${this.proxyUrl}/ocs/api/${this.ocsVersion}/tenants/${this.ocsTenant}/search/communities/${this.ocsCommunity}/streams`
+        : `${this.proxyUrl}/ocs/api/${this.ocsVersion}/tenants/${this.ocsTenant}/namespaces/${this.namespace}/streams`
+      : `http://localhost:${this.edsPort}/api/v1/tenants/default/namespaces/${this.namespace}/streams`;
   }
 
   /** @ngInject */
@@ -45,31 +49,42 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
     this.backendSrv = backendSrv;
 
     this.type = instanceSettings.jsonData?.type || SdsDataSourceType.OCS;
-    this.eds_port = instanceSettings.jsonData?.eds_port || '5590';
-    this.ocs_url = instanceSettings.jsonData?.ocs_url || '';
-    this.ocs_version = instanceSettings.jsonData?.ocs_version || 'v1';
-    this.ocs_tenant = instanceSettings.jsonData?.ocs_tenant || '';
+    this.edsPort = instanceSettings.jsonData?.edsPort || '5590';
+    this.ocsUrl = instanceSettings.jsonData?.ocsUrl || '';
+    this.ocsVersion = instanceSettings.jsonData?.ocsVersion || 'v1';
+    this.ocsTenant = instanceSettings.jsonData?.ocsTenant || '';
+    this.ocsUseCommunity = instanceSettings.jsonData?.ocsUseCommunity || false;
+    this.ocsCommunity = instanceSettings.jsonData?.ocsCommunity || '';
     this.oauthPassThru = instanceSettings.jsonData?.oauthPassThru || false;
-    this.namespace = instanceSettings.jsonData.namespace || '';
+    this.namespace = instanceSettings.jsonData?.namespace || '';
   }
 
   async query(options: DataQueryRequest<SdsQuery>): Promise<DataQueryResponse> {
     const from = options.range?.from.utc().format();
     const to = options.range?.to.utc().format();
-    const requests = options.targets.map(target => {
-      if (!target.stream) {
-        return new Promise(resolve => resolve(null));
+    const requests = options.targets.map((target) => {
+      if (!target.streamId) {
+        return new Promise((resolve) => resolve(null));
       }
-      return this.backendSrv.datasourceRequest({
-        url: `${this.streamsUrl}/${target.stream}/data?startIndex=${from}&endIndex=${to}`,
-        method: 'GET',
-      });
+      if (this.ocsUseCommunity) {
+        const url = new URL(target.streamId);
+
+        return this.backendSrv.datasourceRequest({
+          url: `${this.proxyUrl}/ocs${url.pathname}/data?startIndex=${from}&endIndex=${to}`,
+          method: 'GET',
+        });
+      } else {
+        return this.backendSrv.datasourceRequest({
+          url: `${this.streamsUrl}/${target.streamId}/data?startIndex=${from}&endIndex=${to}`,
+          method: 'GET',
+        });
+      }
     });
 
-    const data = await Promise.all(requests).then(responses => {
+    const data = await Promise.all(requests).then((responses) => {
       let i = 0;
       return responses.map((r: any) => {
-        if (!r) {
+        if (!r || !r.data.length) {
           return new MutableDataFrame();
         }
 
@@ -77,8 +92,8 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
         i++;
         return new MutableDataFrame({
           refId: target.refId,
-          name: target.stream,
-          fields: Object.keys(r.data[0]).map(name => {
+          name: target.streamName,
+          fields: Object.keys(r.data[0]).map((name) => {
             const val0 = r.data[0][name];
             const date = Date.parse(val0);
             const num = Number(val0);
@@ -92,7 +107,7 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
                 : FieldType.string;
             return {
               name,
-              values: r.data.map(d => (type === FieldType.time ? Date.parse(d[name]) : d[name])),
+              values: r.data.map((d) => (type === FieldType.time ? Date.parse(d[name]) : d[name])),
               type,
             };
           }),
@@ -104,14 +119,18 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
   }
 
   async getStreams(query: string): Promise<Array<SelectableValue<string>>> {
-    if (this.namespace) {
-      const url = query ? `${this.streamsUrl}?query=*${query}*` : this.streamsUrl;
-      const requests = this.backendSrv.datasourceRequest({ url, method: 'GET' });
-      return await Promise.resolve(requests).then(responses =>
-        Object.keys(responses.data).map(r => ({ value: responses.data[r].Id, label: responses.data[r].Id }))
+    const url = query ? `${this.streamsUrl}?query=*${query}*` : this.streamsUrl;
+    const requests = this.backendSrv.datasourceRequest({ url, method: 'GET' });
+    if (this.ocsUseCommunity === true) {
+      return await Promise.resolve(requests).then((responses) =>
+        Object.keys(responses.data).map((r) => ({ value: responses.data[r].Self, label: responses.data[r].Id }))
+      );
+    } else if (this.namespace) {
+      return await Promise.resolve(requests).then((responses) =>
+        Object.keys(responses.data).map((r) => ({ value: responses.data[r].Id, label: responses.data[r].Id }))
       );
     } else {
-      return await new Promise(resolve => resolve([]));
+      return await new Promise((resolve) => resolve([]));
     }
   }
 
@@ -121,7 +140,7 @@ export class SdsDataSource extends DataSourceApi<SdsQuery, SdsDataSourceOptions>
         url: this.streamsUrl,
         method: 'GET',
       })
-      .then(r => {
+      .then((r) => {
         if (r.status === 200) {
           return {
             status: 'success',
