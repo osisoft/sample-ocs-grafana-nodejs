@@ -23,7 +23,7 @@ This sample demonstrates how to build a [Grafana](https://grafana.com/) plugin t
 1. Install dependencies, using `npm ci`
 1. Build the plugin, using `npm run build` (or `npm run dev` for browser debugging)
 1. Restart the Grafana server to load the new plugin
-1. Open the Grafana configuration and set the parameter allow_loading_unsigned_plugins equal to osisoft-sds-sample (see [Grafana docs](https://grafana.com/docs/grafana/latest/administration/configuration/#allow_loading_unsigned_plugins))
+1. Open the Grafana configuration and set the parameter allow_loading_unsigned_plugins equal to `osisoft-sds-sample` or to the name of the folder set in step 2 (see [Grafana docs](https://grafana.com/docs/grafana/latest/administration/configuration/#allow_loading_unsigned_plugins))
 1. Add a new Grafana datasource using the sample (see [Grafana docs](https://grafana.com/docs/grafana/latest/features/datasources/add-a-data-source/))
 1. Choose whether to query against OSIsoft Cloud Services or Edge Data Store
 1. Enter the relevant required information; if using OCS, the client secret will be encrypted in the Grafana server and HTTP requests to OCS will be made by a server-side proxy, as described in the [Grafana docs](https://grafana.com/docs/grafana/latest/developers/plugins/authentication/)
