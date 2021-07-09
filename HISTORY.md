@@ -1,5 +1,9 @@
 # Version History
 
+## 1.2.1 / 2021-07-06
+
+- Updated dependencies
+
 ## 1.2.0 / 2021-06-01
 
 - Added the ability to view data from OCS communities
