@@ -23,6 +23,7 @@ This sample demonstrates how to build a [Grafana](https://grafana.com/) plugin t
 1. Install dependencies, using `npm ci`
 1. Build the plugin, using `npm run build` (or `npm run dev` for browser debugging)
 1. Restart the Grafana server to load the new plugin
+1. Open the Grafana configuration and set the parameter allow_loading_unsigned_plugins equal to osisoft-sds-sample (see [Grafana docs](https://grafana.com/docs/grafana/latest/administration/configuration/#allow_loading_unsigned_plugins))
 1. Add a new Grafana datasource using the sample (see [Grafana docs](https://grafana.com/docs/grafana/latest/features/datasources/add-a-data-source/))
 1. Choose whether to query against OSIsoft Cloud Services or Edge Data Store
 1. Enter the relevant required information; if using OCS, the client secret will be encrypted in the Grafana server and HTTP requests to OCS will be made by a server-side proxy, as described in the [Grafana docs](https://grafana.com/docs/grafana/latest/developers/plugins/authentication/)
@@ -33,7 +34,7 @@ This sample demonstrates how to build a [Grafana](https://grafana.com/) plugin t
 
 1. Open a command prompt inside this folder
 1. Build the container using `docker build -t grafana-ocs .`
-1. Run the container using `docker run -d --name=grafana -p 3000:3000 grafana-ocs`
+1. Run the container using `docker run -d --name=grafana -e "GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=osisoft-sds-sample" -p 3000:3000 grafana-ocs`
 1. Navigate to localhost:3000 to configure data sources and view data
 
 ## Using OCS OAuth login to Grafana
